@@ -52,6 +52,10 @@ public class RegexPredicateAstNode extends PredicateAstNode {
         if (matchType == MatchType.LIKE) {
           expr = expr.replace(".", "\\.");
           expr = expr.replace("_", ".");
+          expr = expr.replace("[", "\\[");
+          expr = expr.replace("]", "\\]");
+          expr = expr.replace("(", "\\(");
+          expr = expr.replace(")", "\\)");
           expr = expr.replaceAll("%", ".*?");
         }
         values.add(expr);

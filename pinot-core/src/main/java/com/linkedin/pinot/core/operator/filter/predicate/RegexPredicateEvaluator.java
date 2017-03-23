@@ -31,13 +31,14 @@ public class RegexPredicateEvaluator implements PredicateEvaluator {
     this.predicate = predicate;
     this.dictionary = dictionary;
     // use lowercase to make it case insensitive
-    pattern = Pattern.compile(predicate.getRegex().toLowerCase());
+    pattern = Pattern.compile(predicate.getRegex(), Pattern.UNICODE_CASE | Pattern.CASE_INSENSITIVE);
   }
 
   @Override
   public boolean apply(int dictionaryId) {
+    // make it lowercase to make it case insensitive, pattern regex is already converted to lowercase in the constructor
     String value = dictionary.getStringValue(dictionaryId);
-    return pattern.matcher(value).matches();
+    return pattern.matcher(value).find();
   }
 
   @Override
@@ -45,8 +46,8 @@ public class RegexPredicateEvaluator implements PredicateEvaluator {
 
     for (int dictId : dictionaryIds) {
       // make it lowercase to make it case insensitive, pattern regex is already converted to lowercase in the constructor
-      String value = dictionary.getStringValue(dictId).toLowerCase();
-      if (pattern.matcher(value).matches()) {
+      String value = dictionary.getStringValue(dictId);
+      if (pattern.matcher(value).find()) {
         return true;
       }
     }
