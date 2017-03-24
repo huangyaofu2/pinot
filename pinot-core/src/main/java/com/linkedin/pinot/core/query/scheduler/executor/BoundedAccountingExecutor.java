@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014-2016 LinkedIn Corp. (pinot-core@linkedin.com)
+ * Copyright (C) 2014-2015 LinkedIn Corp. (pinot-core@linkedin.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,112 +14,111 @@
  * limitations under the License.
  */
 
-package com.linkedin.pinot.core.query.scheduler;
+package com.linkedin.pinot.core.query.scheduler.executor;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
-public class QueryExecutorService extends ThreadPoolExecutor {
-
-  public QueryExecutorService(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit,
-      BlockingQueue<Runnable> workQueue) {
-    super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
-  }
-
-  @Override
-  protected void beforeExecute(Thread t, Runnable r) {
-    super.beforeExecute(t, r);
-
-  }
-}
-/*
-
-class BoundedQueryExecutorService implements ExecutorService {
-
-  private final QueryExecutorService executor;
+public class BoundedAccountingExecutor implements ExecutorService {
+  private static Logger LOGGER = LoggerFactory.getLogger(BoundedAccountingExecutor.class);
+  private final QueryExecutorService delegateExecutor;
   private final Semaphore semaphore;
+  private final String tableName;
 
-  BoundedQueryExecutorService(QueryExecutorService s, Semaphore semaphore) {
-    this.executor = s;
+  BoundedAccountingExecutor(QueryExecutorService s, Semaphore semaphore, String tableName) {
+    this.delegateExecutor = s;
     this.semaphore = semaphore;
+    this.tableName = tableName;
   }
 
   @Override
   public void shutdown() {
-
+    delegateExecutor.shutdown();
   }
 
   @Override
   public List<Runnable> shutdownNow() {
-    return null;
+    return delegateExecutor.shutdownNow();
   }
 
   @Override
   public boolean isShutdown() {
-    return false;
+    return delegateExecutor.isShutdown();
   }
 
   @Override
   public boolean isTerminated() {
-    return false;
+    return delegateExecutor.isTerminated();
   }
 
   @Override
   public boolean awaitTermination(long timeout, TimeUnit unit)
       throws InterruptedException {
-    return false;
+    return delegateExecutor.awaitTermination(timeout,unit);
   }
 
   @Override
   public <T> Future<T> submit(Callable<T> task) {
-    try {
-      if (semaphore.tryAcquire(3, TimeUnit.SECONDS)) {
-        return executor.submit(task);
+    return delegateExecutor.submit(new Callable<T>() {
+      @Override
+      public T call()
+          throws Exception {
+        long startTime = 
+        try {
+
+        } finally {
+
+        }
       }
-    } catch (InterruptedException e) {
-      throw new RuntimeException("error");
-    }
+    });
   }
 
   @Override
   public <T> Future<T> submit(Runnable task, T result) {
-    return null;
+    return delegateExecutor.submit(task, result);
   }
 
   @Override
   public Future<?> submit(Runnable task) {
-    return null;
+    return delegateExecutor.submit(task);
   }
 
   @Override
   public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
       throws InterruptedException {
-    return null;
+    return delegateExecutor.invokeAll(tasks);
   }
 
   @Override
   public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
       throws InterruptedException {
-    return null;
+    return delegateExecutor.invokeAll(tasks, timeout, unit);
   }
 
   @Override
   public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
       throws InterruptedException, ExecutionException {
-    return null;
+    return delegateExecutor.invokeAny(tasks);
   }
 
   @Override
   public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
       throws InterruptedException, ExecutionException, TimeoutException {
-    return null;
+    return delegateExecutor.invokeAny(tasks, timeout, unit);
   }
 
   @Override
   public void execute(Runnable command) {
-
+    delegateExecutor.execute(command);
   }
 }
-*/
