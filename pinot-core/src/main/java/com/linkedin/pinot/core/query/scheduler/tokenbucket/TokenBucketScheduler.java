@@ -83,6 +83,9 @@ public class TokenBucketScheduler extends QueryScheduler {
             break;
           }
           SchedulerQueryContext request = queryQueue.take();
+          request.getTableAccountant().incrementThreads();
+          BoundedAccountingExecutor executor = new BoundedAccountingExecutor(getWorkerExecutorService(),
+              new Semaphore(8), request.getQueryRequest().getTableName());
           pendingQuries.decrementAndGet();
           queryRunners.submit(request.getQueryFutureTask());
         }
