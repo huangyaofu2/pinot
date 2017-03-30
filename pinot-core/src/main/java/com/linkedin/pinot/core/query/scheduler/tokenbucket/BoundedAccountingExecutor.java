@@ -16,6 +16,7 @@
 
 package com.linkedin.pinot.core.query.scheduler.tokenbucket;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -34,6 +35,7 @@ public class BoundedAccountingExecutor implements ExecutorService {
   private final ExecutorService delegateExecutor;
   private Semaphore semaphore;
   private final String tableName;
+  private TableTokenAccount tableAccountant = null;
 
   public BoundedAccountingExecutor(ExecutorService s, Semaphore semaphore, String tableName) {
     this.delegateExecutor = s;
@@ -44,6 +46,15 @@ public class BoundedAccountingExecutor implements ExecutorService {
   public BoundedAccountingExecutor(ExecutorService s, String tableName) {
     this.delegateExecutor = s;
     this.tableName = tableName;
+  }
+
+  public void setTableAccountant(TableTokenAccount accountant) {
+     this.tableAccountant = accountant;
+  }
+
+  @VisibleForTesting
+  public Semaphore getSemaphore() {
+    return semaphore;
   }
 
   public void setBounds(Semaphore s) {
@@ -122,12 +133,12 @@ public class BoundedAccountingExecutor implements ExecutorService {
 
   private <T> QueryAccountingCallable<T> toAccountingCallable(Callable<T> callable) {
     acquirePermits(1);
-    return new QueryAccountingCallable<>(callable, semaphore);
+    return new QueryAccountingCallable<>(callable, semaphore, tableAccountant);
   }
 
   private QueryAccountingRunnable toAccoutingRunnable(Runnable runnable) {
     acquirePermits(1);
-    return new QueryAccountingRunnable(runnable, semaphore);
+    return new QueryAccountingRunnable(runnable, semaphore, tableAccountant);
   }
 
   private void acquirePermits(int permits) {
@@ -143,19 +154,27 @@ public class BoundedAccountingExecutor implements ExecutorService {
 class QueryAccountingRunnable implements Runnable {
   private final Runnable runnable;
   private final Semaphore semaphore;
+  private final TableTokenAccount accountant;
 
-  QueryAccountingRunnable(Runnable r, Semaphore semaphore) {
+  QueryAccountingRunnable(Runnable r, Semaphore semaphore, TableTokenAccount accountant) {
     this.runnable = r;
     this.semaphore = semaphore;
+    this.accountant = accountant;
   }
 
   @Override
   public void run() {
     long startTime = System.nanoTime();
     try {
+      if (accountant != null) {
+        accountant.incrementThreads();
+      }
       runnable.run();
     } finally {
       long totalTime = System.nanoTime() - startTime;
+      if (accountant != null) {
+        accountant.decrementThreads();
+      }
       semaphore.release();
     }
   }
@@ -165,19 +184,27 @@ class QueryAccountingCallable<T> implements Callable<T> {
 
   private final Callable<T> callable;
   private final Semaphore semaphore;
+  private final TableTokenAccount accountant;
 
-  QueryAccountingCallable(Callable<T> c, Semaphore semaphore) {
+  QueryAccountingCallable(Callable<T> c, Semaphore semaphore, TableTokenAccount accountant) {
     this.callable = c;
     this.semaphore = semaphore;
+    this.accountant = accountant;
   }
   @Override
   public T call()
       throws Exception {
     long startTime = System.nanoTime();
     try {
+      if (accountant != null) {
+        accountant.incrementThreads();
+      }
       return callable.call();
     } finally {
       long totalTime = System.nanoTime();
+      if (accountant != null) {
+        accountant.decrementThreads();
+      }
       semaphore.release();
     }
   }

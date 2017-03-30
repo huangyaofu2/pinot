@@ -19,6 +19,7 @@ package com.linkedin.pinot.core.query.scheduler;
 import com.google.common.base.Preconditions;
 import com.linkedin.pinot.common.metrics.ServerMetrics;
 import com.linkedin.pinot.common.query.QueryExecutor;
+import com.linkedin.pinot.core.query.scheduler.tokenbucket.FCFSBScheduler;
 import com.linkedin.pinot.core.query.scheduler.tokenbucket.TokenBucketScheduler;
 import javax.annotation.Nonnull;
 import org.apache.commons.configuration.Configuration;
@@ -36,13 +37,22 @@ public class QuerySchedulerFactory {
     Preconditions.checkNotNull(queryExecutor);
 
     String algorithm = schedulerConfig.getString("algorithm", DEFAULT_QUERY_SCHEDULER_ALGORITHM).toLowerCase();
-
+   /* LOGGER.info("Starting scheduler: fcfsb");
+    //return new TokenBucketScheduler(schedulerConfig, queryExecutor, serverMetrics);
+    //return new FCFSQueryScheduler(schedulerConfig, queryExecutor, serverMetrics);
+    return new FCFSBScheduler(schedulerConfig, queryExecutor, serverMetrics);*/
     if (algorithm.equals("fcfs")) {
       LOGGER.info("Using FCFS query scheduler");
       return new FCFSQueryScheduler(schedulerConfig, queryExecutor, serverMetrics);
     } else if (algorithm.equals("tokenbucket")) {
       LOGGER.info("Using Priority Token Bucket scheduler");
       return new TokenBucketScheduler(schedulerConfig, queryExecutor, serverMetrics);
+    } else if (algorithm.equals("fcfsi")) {
+      LOGGER.info("Using fcfsi scheduler");
+      return new FCFSIScheduler(schedulerConfig, queryExecutor, serverMetrics);
+    } else if (algorithm.equals("fcfsb")) {
+      LOGGER.info("Using fcfsb scheduler");
+      return new FCFSBScheduler(schedulerConfig, queryExecutor, serverMetrics);
     }
 
     LOGGER.info("Using default FCFS query scheduler");
