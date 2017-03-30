@@ -32,13 +32,22 @@ import org.slf4j.LoggerFactory;
 public class BoundedAccountingExecutor implements ExecutorService {
   private static Logger LOGGER = LoggerFactory.getLogger(BoundedAccountingExecutor.class);
   private final ExecutorService delegateExecutor;
-  private final Semaphore semaphore;
+  private Semaphore semaphore;
   private final String tableName;
 
-  BoundedAccountingExecutor(ExecutorService s, Semaphore semaphore, String tableName) {
+  public BoundedAccountingExecutor(ExecutorService s, Semaphore semaphore, String tableName) {
     this.delegateExecutor = s;
     this.semaphore = semaphore;
     this.tableName = tableName;
+  }
+
+  public BoundedAccountingExecutor(ExecutorService s, String tableName) {
+    this.delegateExecutor = s;
+    this.tableName = tableName;
+  }
+
+  public void setBounds(Semaphore s) {
+    this.semaphore = s;
   }
 
   @Override
@@ -86,28 +95,24 @@ public class BoundedAccountingExecutor implements ExecutorService {
   public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
       throws InterruptedException {
     throw new UnsupportedOperationException("invoke all on bounded executor is not supported");
-    //return delegateExecutor.invokeAll(toAccountingCallables(tasks));
   }
 
   @Override
   public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
       throws InterruptedException {
     throw new UnsupportedOperationException("invoke all on bounded executor is not supported");
-    // return delegateExecutor.invokeAll(toAccountingCallables(tasks), timeout, unit);
   }
 
   @Override
   public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
       throws InterruptedException, ExecutionException {
     throw new UnsupportedOperationException("invoke all on bounded executor is not supported");
-    // return delegateExecutor.invokeAny(toAccountingCallables(tasks));
   }
 
   @Override
   public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
       throws InterruptedException, ExecutionException, TimeoutException {
     throw new UnsupportedOperationException("invoke all on bounded executor is not supported");
-    // return delegateExecutor.invokeAny(toAccountingCallables(tasks), timeout, unit);
   }
 
   @Override
@@ -120,29 +125,10 @@ public class BoundedAccountingExecutor implements ExecutorService {
     return new QueryAccountingCallable<>(callable, semaphore);
   }
 
-  /*private <T> List<QueryAccountingCallable<T>> toAccountingCallables(Collection<? extends Callable<T>> tasks) {
-    List<QueryAccountingCallable<T>> accountingCallables = new ArrayList<>(tasks.size());
-    semaphore.drainPermits();
-    for (Callable<T> task : tasks) {
-      accountingCallables.add(new QueryAccountingCallable<T>(task, semaphore));
-    }
-    return accountingCallables;
-  }
-*/
   private QueryAccountingRunnable toAccoutingRunnable(Runnable runnable) {
     acquirePermits(1);
     return new QueryAccountingRunnable(runnable, semaphore);
   }
-
-/*
-  private <T> List<QueryAccountingRunnable> toAccountingRunnables(Collection<? extends Runnable> tasks) {
-    List<QueryAccountingRunnable> runnables = new ArrayList<>(tasks.size());
-    for (Runnable task : tasks) {
-      runnables.add(toAccoutingRunnable(task));
-    }
-    return runnables;
-  }
-*/
 
   private void acquirePermits(int permits) {
     try {

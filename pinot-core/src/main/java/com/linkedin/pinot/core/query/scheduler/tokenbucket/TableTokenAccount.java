@@ -49,8 +49,13 @@ public class TableTokenAccount {
   }
 
   int getAvailableTokens() {
-    consumeTokens();
-    return availableTokens;
+    tokenLock.lock();
+    try {
+      consumeTokens();
+      return availableTokens;
+    } finally {
+      tokenLock.unlock();
+    }
   }
 
   public void incrementThreads() {

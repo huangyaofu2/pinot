@@ -144,7 +144,6 @@ public abstract class QueryScheduler {
 
   public ExecutorService getWorkerExecutorService() { return queryWorkers; }
 
-
   protected Callable<DataTable> getQueryCallable(final QueryRequest request) {
     return new Callable<DataTable>() {
       @Override

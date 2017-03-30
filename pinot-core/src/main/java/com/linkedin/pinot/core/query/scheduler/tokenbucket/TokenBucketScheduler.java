@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 public class TokenBucketScheduler extends QueryScheduler {
   private static Logger LOGGER = LoggerFactory.getLogger(TokenBucketScheduler.class);
 
+  public static final int MAX_THREAD_LIMIT = Math.max(1, Runtime.getRuntime().availableProcessors() / 4);
   private final SchedulerPriorityQueue queryQueue;
   private final AtomicInteger pendingQuries = new AtomicInteger(0);
   private final Semaphore runningQueriesSemaphore = new Semaphore(numQueryRunnerThreads);
@@ -53,19 +54,23 @@ public class TokenBucketScheduler extends QueryScheduler {
 
   @Override
   public ListenableFuture<byte[]> submit(@Nullable final QueryRequest queryRequest) {
-    ListenableFutureTask<DataTable> queryFutureTask = getQueryFutureTask(queryRequest);
+    BoundedAccountingExecutor executor = new BoundedAccountingExecutor(getWorkerExecutorService(),
+        queryRequest.getTableName());
+    ListenableFutureTask<DataTable> queryFutureTask = getQueryFutureTask(queryRequest, executor);
     ListenableFuture<byte[]> queryResultFuture = getQueryResultFuture(queryRequest, queryFutureTask);
-    final SchedulerQueryContext schedulerQueryContext = new SchedulerQueryContext(queryRequest, queryFutureTask,
+    final SchedulerQueryContext schedQueryContext = new SchedulerQueryContext(queryRequest, queryFutureTask,
         queryResultFuture);
+    schedQueryContext.setExecutor(executor);
     queryResultFuture.addListener(new Runnable() {
       @Override
       public void run() {
-        queryQueue.markTaskDone(schedulerQueryContext);
+        queryQueue.markTaskDone(schedQueryContext);
         runningQueriesSemaphore.release();
+        schedQueryContext.getTableAccountant().decrementThreads();
       }
     }, MoreExecutors.directExecutor());
     pendingQuries.incrementAndGet();
-    queryQueue.put(schedulerQueryContext);
+    queryQueue.put(schedQueryContext);
 
     return queryResultFuture;
   }
@@ -83,9 +88,9 @@ public class TokenBucketScheduler extends QueryScheduler {
             break;
           }
           SchedulerQueryContext request = queryQueue.take();
+          BoundedAccountingExecutor executor = request.getExecutor();
+          executor.setBounds(new Semaphore(MAX_THREAD_LIMIT));
           request.getTableAccountant().incrementThreads();
-          BoundedAccountingExecutor executor = new BoundedAccountingExecutor(getWorkerExecutorService(),
-              new Semaphore(8), request.getQueryRequest().getTableName());
           pendingQuries.decrementAndGet();
           queryRunners.submit(request.getQueryFutureTask());
         }

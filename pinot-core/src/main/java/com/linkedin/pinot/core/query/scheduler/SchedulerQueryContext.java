@@ -21,6 +21,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableFutureTask;
 import com.linkedin.pinot.common.query.QueryRequest;
 import com.linkedin.pinot.common.utils.DataTable;
+import com.linkedin.pinot.core.query.scheduler.tokenbucket.BoundedAccountingExecutor;
 import com.linkedin.pinot.core.query.scheduler.tokenbucket.TableTokenAccount;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,6 +37,7 @@ public class SchedulerQueryContext {
   private final ListenableFutureTask<DataTable> queryFutureTask;
   private final ListenableFuture<byte[]> queryResultFuture;
   private TableTokenAccount tableAccountant;
+  private BoundedAccountingExecutor executor;
 
   public SchedulerQueryContext(@Nonnull QueryRequest queryRequest, @Nonnull ListenableFutureTask<DataTable> queryFutureTask,
       @Nonnull ListenableFuture<byte[]> queryResultFuture) {
@@ -70,5 +72,13 @@ public class SchedulerQueryContext {
 
   public @Nullable TableTokenAccount getTableAccountant() {
     return tableAccountant;
+  }
+
+  public void setExecutor(BoundedAccountingExecutor executor) {
+    this.executor = executor;
+  }
+
+  public BoundedAccountingExecutor getExecutor() {
+    return executor;
   }
 }
