@@ -22,29 +22,28 @@ import org.apache.kafka.common.utils.Utils;
 /**
  * Implementation of {@link ModuloPartitionFunction} that mimics Kafka's
  * {@link org.apache.kafka.clients.producer.internals.DefaultPartitioner}.
- * However, this is not general purpose. It assumes that the partition key
- * was a string as used by the Tracking Producer. This is only a reference
- * implementation and users should create their own for their specific partitioner.
  *
  */
-public class DefaultKafkaPartitionFunction implements PartitionFunction {
-  private static final String NAME = "DefaultKafkaPartitioner";
+public class DefaultPartitioner implements PartitionFunction {
+  private static final String NAME = "DefaultPartitioner";
   private final int _divisor;
+  public kafka.producer.ByteArrayPartitioner defaultPartitioner;
 
   /**
    * Constructor for the class.
    * @param args Arguments for the partition function.
    */
-  public DefaultKafkaPartitionFunction(String[] args) {
+  public DefaultPartitioner(String[] args) {
     Preconditions.checkArgument(args.length == 1);
     _divisor = Integer.parseInt(args[0]);
     Preconditions.checkState(_divisor > 0, "Divisor for DefaultKafkaPartitionFunction cannot be <= zero.");
+    defaultPartitioner = new kafka.producer.ByteArrayPartitioner(null);
   }
 
   @Override
   public int getPartition(Object valueIn) {
-    String value = (valueIn instanceof String) ? (String) valueIn : valueIn.toString();
-    return (Utils.murmur2(((String) value).getBytes()) & 0x7fffffff) % _divisor;
+    byte[] value = valueIn.toString().getBytes();
+    return defaultPartitioner.partition(((Long) valueIn).toString().getBytes(), _divisor);
   }
 
   @Override
@@ -52,3 +51,4 @@ public class DefaultKafkaPartitionFunction implements PartitionFunction {
     return NAME + PartitionFunctionFactory.PARTITION_FUNCTION_DELIMITER + _divisor;
   }
 }
+

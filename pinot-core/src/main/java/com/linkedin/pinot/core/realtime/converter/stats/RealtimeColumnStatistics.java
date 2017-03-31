@@ -146,11 +146,11 @@ public class RealtimeColumnStatistics implements ColumnStatistics {
 
   @Override
   public PartitionFunction getPartitionFunction() {
-    return null;
+    return _dictionaryReader.getPartitionFunction();
   }
 
   @Override
   public List<IntRange> getPartitionRanges() {
-    return null;
+    return _dictionaryReader.getPartitionRanges();
   }
 }

@@ -17,12 +17,15 @@ package com.linkedin.pinot.integration.tests;
 
 import com.linkedin.pinot.common.utils.CommonConstants;
 import com.linkedin.pinot.common.utils.ZkStarter;
+import com.linkedin.pinot.core.data.partition.PartitionFunctionFactory;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import com.linkedin.pinot.common.data.Schema;
 import com.linkedin.pinot.common.utils.KafkaStarterUtils;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.helix.ZNRecord;
 import org.apache.helix.manager.zk.ZNRecordSerializer;
 import org.apache.helix.manager.zk.ZkClient;
@@ -41,9 +44,12 @@ public class LLCRealtimeClusterIntegrationTest extends RealtimeClusterIntegratio
       String kafkaTopic, File schemaFile, File avroFile) throws Exception {
     Schema schema = Schema.fromFile(schemaFile);
     addSchema(schemaFile, schema.getSchemaName());
+    Map<String, String> map = new HashMap<String, String>();
+    map.put("AirlineID", PartitionFunctionFactory.PartitionFunctionType.DefaultKafkaPartitioner.toString());
+//        "DefaultPartitioner");
     addLLCRealtimeTable(tableName, timeColumnName, timeColumnType, -1, "", KafkaStarterUtils.DEFAULT_KAFKA_BROKER, kafkaTopic, schema.getSchemaName(),
         null, null, avroFile, ROW_COUNT_FOR_REALTIME_SEGMENT_FLUSH, "Carrier", Collections.<String>emptyList(), "mmap",
-        null);
+        null, map);
   }
 
   protected void createKafkaTopic(String kafkaTopic, String zkStr) {

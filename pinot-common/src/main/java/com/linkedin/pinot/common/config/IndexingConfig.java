@@ -39,7 +39,7 @@ public class IndexingConfig {
   private String _starTreeFormat;
   private String _columnMinMaxValueGeneratorMode;
   private List<String> _noDictionaryColumns;
-  private Map<String, Pair<String, int>> columnPartitionConfig;
+  private Map<String, String> _partitioners;
 
   public List<String> getInvertedIndexColumns() {
     return _invertedIndexColumns;
@@ -121,7 +121,14 @@ public class IndexingConfig {
     _noDictionaryColumns = noDictionaryColumns;
   }
 
-  public 
+  public Map<String, String> getPartitioners() {
+    return _partitioners;
+  }
+
+  public void setPartitioners(Map<String, String> partitioners) {
+    _partitioners = partitioners;
+  }
+
   @Override
   public String toString() {
     final StringBuilder result = new StringBuilder();

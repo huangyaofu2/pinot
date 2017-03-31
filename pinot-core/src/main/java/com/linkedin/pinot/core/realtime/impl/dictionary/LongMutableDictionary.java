@@ -15,6 +15,7 @@
  */
 package com.linkedin.pinot.core.realtime.impl.dictionary;
 
+import com.linkedin.pinot.core.indexsegment.generator.SegmentPartitionConfig;
 import java.util.Arrays;
 
 
@@ -36,12 +37,14 @@ public class LongMutableDictionary extends MutableDictionaryReader {
 
     if (rawValue instanceof String) {
       Long e = Long.parseLong(rawValue.toString());
+      checkPartition(e);
       addToDictionaryBiMap(e);
       updateMinMax(e);
       return;
     }
 
     if (rawValue instanceof Long) {
+      checkPartition(rawValue);
       addToDictionaryBiMap(rawValue);
       updateMinMax((Long) rawValue);
       return;
@@ -51,12 +54,14 @@ public class LongMutableDictionary extends MutableDictionaryReader {
       for (Object o : (Object[]) rawValue) {
         if (o instanceof String) {
           final Long longValue = Long.parseLong(o.toString());
+          checkPartition(longValue);
           addToDictionaryBiMap(longValue);
           updateMinMax(longValue);
           continue;
         }
 
         if (o instanceof Long) {
+          checkPartition(o);
           addToDictionaryBiMap(o);
           updateMinMax((Long) o);
         }

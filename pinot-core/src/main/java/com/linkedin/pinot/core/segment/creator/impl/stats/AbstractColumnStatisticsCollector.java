@@ -52,7 +52,7 @@ public abstract class AbstractColumnStatisticsCollector implements ColumnStatist
   private int numInputNullValues = 0;  // Number of rows in which this column was null in the input.
   private PartitionFunction partitionFunction;
   private List<IntRange> partitionValues;
-  private boolean columnPartitioned = true;
+  private boolean columnPartitioned;
 
   void updateTotalNumberOfEntries(Object[] entries) {
     totalNumberOfEntries += entries.length;
@@ -67,6 +67,7 @@ public abstract class AbstractColumnStatisticsCollector implements ColumnStatist
     fieldSpec = statsCollectorConfig.getFieldSpecForColumn(column);
     partitionFunction = statsCollectorConfig.getPartitionFunction(column);
     partitionValues = statsCollectorConfig.getPartitionValue(column);
+    columnPartitioned = (partitionFunction != null);
     addressNull(previousValue, fieldSpec.getDataType());
     previousValue = null;
   }

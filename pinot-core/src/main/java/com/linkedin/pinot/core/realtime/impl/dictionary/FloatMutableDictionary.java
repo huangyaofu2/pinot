@@ -15,6 +15,7 @@
  */
 package com.linkedin.pinot.core.realtime.impl.dictionary;
 
+import com.linkedin.pinot.core.indexsegment.generator.SegmentPartitionConfig;
 import java.util.Arrays;
 
 
@@ -35,12 +36,14 @@ public class FloatMutableDictionary extends MutableDictionaryReader {
     }
     if (rawValue instanceof String) {
       Float e = Float.parseFloat(rawValue.toString());
+      checkPartition(e);
       addToDictionaryBiMap(e);
       updateMinMax(e);
       return;
     }
 
     if (rawValue instanceof Float) {
+      checkPartition(rawValue);
       addToDictionaryBiMap(rawValue);
       updateMinMax((Float) rawValue);
       return;
@@ -51,12 +54,14 @@ public class FloatMutableDictionary extends MutableDictionaryReader {
       for (Object o : (Object[]) rawValue) {
         if (o instanceof String) {
           final Float floatValue = Float.parseFloat(o.toString());
+          checkPartition(floatValue);
           addToDictionaryBiMap(floatValue);
           updateMinMax(floatValue);
           continue;
         }
 
         if (o instanceof Float) {
+          checkPartition(o);
           addToDictionaryBiMap(o);
           updateMinMax((Float) o);
         }

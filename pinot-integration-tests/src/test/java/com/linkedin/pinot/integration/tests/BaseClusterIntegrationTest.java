@@ -708,6 +708,7 @@ public abstract class BaseClusterIntegrationTest extends ClusterTest {
     properties.put("metadata.broker.list", kafkaBroker);
     properties.put("serializer.class", "kafka.serializer.DefaultEncoder");
     properties.put("request.required.acks", "1");
+    properties.put("partitioner.class","kafka.producer.ByteArrayPartitioner");
 
     ProducerConfig producerConfig = new ProducerConfig(properties);
     Producer<byte[], byte[]> producer = new Producer<byte[], byte[]>(producerConfig);
@@ -729,8 +730,10 @@ public abstract class BaseClusterIntegrationTest extends ClusterTest {
           binaryEncoder.flush();
 
           byte[] bytes = outputStream.toByteArray();
+          byte[] keyBytes = (partitioningKey == null) ? Longs.toByteArray(System.currentTimeMillis()) :
+              ((Long) genericRecord.get("AirlineID")).toString().getBytes();
           KeyedMessage<byte[], byte[]> data = new KeyedMessage<byte[], byte[]>(kafkaTopic,
-              Longs.toByteArray(System.currentTimeMillis()), bytes);
+              keyBytes, bytes);
 
           if (BATCH_KAFKA_MESSAGES) {
             messagesToWrite.add(data);
